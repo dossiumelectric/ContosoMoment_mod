@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy solution file
-COPY ContosoCloud.sln ./
+COPY ContosoMoments-Cloud.sln ./
 
 # Copy project folders
 COPY src/Cloud/ContosoMoments.Common/ ./src/Cloud/ContosoMoments.Common/
@@ -13,12 +13,12 @@ COPY src/Cloud/ContosoMoments.ResizerWebJob/ ./src/Cloud/ContosoMoments.ResizerW
 COPY src/Cloud/ContosoMoments.WebJobWrapper/ ./src/Cloud/ContosoMoments.WebJobWrapper/
 
 # Restore NuGet packages for the solution
-RUN dotnet restore ContosoCloud.sln
+RUN dotnet restore ContosoMoments-Cloud.sln
 
 # Build the solution in Release mode
-RUN dotnet build ContosoCloud.sln -c Release -o /app/build
+RUN dotnet build ContosoMoments-Cloud.sln -c Release -o /app/build
 
-# Publish the API project only (adjust if you want a different project)
+# Publish the API project only
 RUN dotnet publish src/Cloud/ContosoMoments.API/ContosoMoments.API.csproj -c Release -o /app/publish
 
 # Stage 2: Runtime
@@ -28,3 +28,5 @@ COPY --from=build /app/publish .
 
 EXPOSE 80
 ENTRYPOINT ["dotnet", "ContosoMoments.API.dll"]
+
+
