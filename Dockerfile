@@ -1,29 +1,30 @@
 # Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy csproj and restore for caching
-COPY ContosoMoments/*.csproj ./ContosoMoments/
-RUN dotnet restore ContosoMoments/ContosoMoments.csproj
+# Copy solution file
+COPY ContosoCloud.sln ./
 
-# Copy all source
-COPY . .
+# Copy project folders
+COPY src/Cloud/ContosoMoments.Common/ ./src/Cloud/ContosoMoments.Common/
+COPY src/Cloud/ContosoMoments.API/ ./src/Cloud/ContosoMoments.API/
+COPY src/Cloud/ContosoMoments.WebJobWrapper/ ./src/Cloud/ContosoMoments.WebJobWrapper/
+COPY src/Cloud/ContosoMoments.ResizerWebJob/ ./src/Cloud/ContosoMoments.ResizerWebJob/
+COPY src/Cloud/ContosoMoments.Function/ ./src/Cloud/ContosoMoments.Function/
 
-# Publish
-RUN dotnet publish ContosoMoments/ContosoMoments.csproj -c Release -o /app/publish
+# Restore NuGet packages for the solution
+RUN dotnet restore ContosoCloud.sln
+
+# Build the solution in Release mode
+RUN dotnet build ContosoCloud.sln -c Release -o /app/build
+
+# Publish the API project only
+RUN dotnet publish src/Cloud/ContosoMoments.API/ContosoMoments.API.csproj -c Release -o /app/publish
 
 # Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:7.0-alpine
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-
-# Security: Run as non-root
-RUN adduser -D appuser
-USER appuser
-
-# Copy published output
 COPY --from=build /app/publish .
 
-# Expose HTTP
 EXPOSE 80
-
-ENTRYPOINT ["dotnet", "ContosoMoments.dll"]
+ENTRYPOINT ["dotnet", "ContosoMoments.API.dll"]
